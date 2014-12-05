@@ -34,7 +34,7 @@ $(window).load(function(){
 	var markers = L.markerClusterGroup();
 	
 	// Pull data
-	$.getJSON("py/process.py?operation=getIncidents&startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
+	$.getJSON("/incidents?startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
 		
 		// Update total count
 		$("#total_incidents").html( data.length );
@@ -109,7 +109,7 @@ $(window).load(function(){
 		map.addLayer(markers);
 		
 		// Add aggregrated charges
-		$.getJSON("py/process.py?operation=getAggregate&startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
+		$.getJSON("/aggregate?startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
 			$.each(data, function(j, aggregateCrime){
 				var newAggregateCrime = $("<tr></tr>").appendTo("#aggregate table");
 				newAggregateCrime.append("<td><strong>" + aggregateCrime.description + "</strong></td>");
