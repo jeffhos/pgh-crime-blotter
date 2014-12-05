@@ -109,7 +109,7 @@ $(window).load(function(){
 		map.addLayer(markers);
 		
 		// Add aggregrated charges
-		$.getJSON("/aggregate?startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
+		$.getJSON("/aggregates?startDate=" + startDate + "&endDate=" + endDate + "&startTime=" + startTime + "&endTime=" + endTime, function(data){
 			$.each(data, function(j, aggregateCrime){
 				var newAggregateCrime = $("<tr></tr>").appendTo("#aggregate table");
 				newAggregateCrime.append("<td><strong>" + aggregateCrime.description + "</strong></td>");

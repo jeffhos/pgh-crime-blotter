@@ -1,7 +1,8 @@
 source 'https://rubygems.org'
 
-gem 'sinatra'
+gem 'rack-contrib'
+gem 'grape'
+gem 'grape-entity'
 gem 'pg'
-gem 'activerecord'
-gem 'sinatra-activerecord'
+gem 'activerecord', :require => 'active_record'
 gem 'json'

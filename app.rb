@@ -1,5 +1,9 @@
-require 'sinatra'
-require 'sinatra/activerecord'
+require 'rubygems'
+require 'bundler/setup'
+
+require 'active_record'
+require 'grape'
+require 'grape-entity'
 require 'json'
 
 ActiveRecord::Base.establish_connection(
@@ -12,62 +16,83 @@ ActiveRecord::Base.establish_connection(
   schema_search_path: 'blotter')
 
 
-class Incident < ActiveRecord::Base
-  self.primary_key = 'incidentid'
-  self.table_name = 'incident'
+# ---------------------------------------------------------------------------------------------------------------------
+# ACTIVERECORD MODEL DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------------------
 
-  has_many :incident_descriptions, :foreign_key => 'incidentid'
-end
-
-class IncidentDescription < ActiveRecord::Base
+class Charge < ActiveRecord::Base
   self.primary_key = 'incidentdescriptionid'
   self.table_name = 'incidentdescription'
 
   belongs_to :incident, :foreign_key => 'incidentid'
-end
 
-
-get '/' do
-  redirect '/index.html'
-end
-
-get '/incidents' do
-  content_type :json
-  incident_search = Incident.where(incidentdate: params[:startDate] .. params[:endDate])
-                            .where(incidenttime: params[:startTime] .. params[:endTime])
-                            .includes(:incident_descriptions)
-  incidents = incident_search.map do | incident |    
-    {
-      type:         incident.incidenttype,
-      date:         incident.incidentdate,
-      time:         incident.incidenttime,
-      address:      incident.address,
-      neighborhood: incident.neighborhood,
-      lat:          incident.lat,
-      lng:          incident.lng,
-      zone:         incident.zone,
-      age:          incident.age,
-      gender:       incident.gender,
-      charges:      incident.incident_descriptions.map { | charge | 
-        { section: charge.section, description: charge.description } }
-    }
+  def self.aggregate_over(start_date, start_time, end_date, end_time)
+    joins(:incident).select('incidentdescription.description as description')
+                    .select('COUNT(incidentdescription.incidentdescriptionid) as total')
+                    .where('incident.incidentdate' => start_date .. end_date)
+                    .where('incident.incidenttime' => start_time .. end_time)
+                    .group('incidentdescription.description')
+                    .order('total DESC')
   end
-
-  incidents.to_json
 end
 
-get '/aggregate' do
-  content_type :json
-  aggregate_search = IncidentDescription.joins(:incident)
-                                        .select('incidentdescription.description as description')
-                                        .select('COUNT(incidentdescription.incidentdescriptionid) as total')
-                                        .where('incident.incidentdate' => params[:startDate] .. params[:endDate])
-                                        .where('incident.incidenttime' => params[:startTime] .. params[:endTime])
-                                        .group('incidentdescription.description')
-                                        .order('total DESC')
-  aggregates = aggregate_search.map do | aggregate |
-    { description: aggregate[:description], total: aggregate[:total] }
-  end
+class Incident < ActiveRecord::Base
+  self.primary_key = 'incidentid'
+  self.table_name = 'incident'
 
-  aggregates.to_json
+  has_many :charges, :foreign_key => 'incidentid'
+
+  def self.in_range(start_date, start_time, end_date, end_time)
+    where(incidentdate: start_date .. end_date).where(incidenttime: start_time .. end_time).includes(:charges)
+  end
+end
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# GRAPE-ENTITY REPRESENTER DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------------------
+
+class ChargeEntity < Grape::Entity
+  expose :section
+  expose :description
+end  
+
+class IncidentEntity < Grape::Entity
+  expose :incidenttype, as: :type
+  expose :incidentdate, as: :date
+  expose :incidenttime, as: :time
+  expose :address
+  expose :neighborhood
+  expose :lat
+  expose :lng
+  expose :zone
+  expose :age
+  expose :gender
+  expose :charges, with: ChargeEntity
+end
+
+class AggregateEntity < Grape::Entity
+  expose :description
+  expose :total
+end
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# API DEFINITION
+# ---------------------------------------------------------------------------------------------------------------------
+
+module Blotter
+  class API < Grape::API
+    format :json
+
+    get :incidents do
+      present Incident.in_range(params[:startDate], params[:startTime], params[:endDate], params[:endTime]), 
+        with: IncidentEntity
+    end
+
+    get :aggregates do
+      present Charge.aggregate_over(params[:startDate], params[:startTime], params[:endDate], params[:endTime]), 
+        with: AggregateEntity
+    end
+  end
 end
