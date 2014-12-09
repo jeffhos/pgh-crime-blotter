@@ -58,9 +58,11 @@ class ChargeEntity < Grape::Entity
 end  
 
 class IncidentEntity < Grape::Entity
+  format_with(:friendly_timestamp) { |dt| dt.strftime("%l:%M %P")}
+
   expose :incidenttype, as: :type
   expose :incidentdate, as: :date
-  expose :incidenttime, as: :time
+  expose :incidenttime, as: :time, format_with: :friendly_timestamp
   expose :address
   expose :neighborhood
   expose :lat

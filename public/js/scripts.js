@@ -1,5 +1,4 @@
-// Initialize global date objects and set them by default
-// to yesterday's date. 
+// Initialize global date objects and set them by default to yesterday's date.
 d = new Date();
 d.setDate( d.getDate() - 1 );
 var startDate = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
@@ -7,15 +6,12 @@ var endDate = startDate;
 var startTime = "00:00";
 var endTime = "23:59";
 
-
-
 $(window).load(function(){
 	// Check to see if URL has fun things for us
-	
 	startDate = (getQueryVariable("startdate") != false ? getQueryVariable("startdate") : startDate);
-	endDate = (getQueryVariable("enddate") != false ? getQueryVariable("enddate") : startDate);
+	endDate   = (getQueryVariable("enddate")   != false ? getQueryVariable("enddate")   : startDate);
 	startTime = (getQueryVariable("starttime") != false ? getQueryVariable("starttime") : startTime);
-	endTime = (getQueryVariable("endtime") != false ? getQueryVariable("endtime") : endTime);
+	endTime   = (getQueryVariable("endtime")   != false ? getQueryVariable("endtime")   : endTime);
 
 	// Initialize map and add Stamen map layer
 	var layer = new L.StamenTileLayer("terrain");
